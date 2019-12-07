@@ -1,0 +1,167 @@
+apiVersion: storage.k8s.io/v1
+kind: StorageClass
+metadata:
+  name: ssd
+provisioner: kubernetes.io/gce-pd
+volumeBindingMode: WaitForFirstConsumer
+allowedTopologies:
+- matchLabelExpressions:
+  - key: failure-domain.beta.kubernetes.io/zone
+    values:
+    - asia-northeast1-a
+    - asia-northeast1-b
+    - asia-northeast1-c
+parameters:
+  type: pd-ssd
+  replication-type: none
+
+---
+
+apiVersion: elasticsearch.k8s.elastic.co/v1beta1
+kind: Elasticsearch
+metadata:
+  name: eck
+spec:
+  version: 7.4.0
+  nodeSets:
+  - name: master-a
+    count: 1
+    config:
+      node.master: true
+      node.data: false
+      node.ingest: false
+      node.store.allow_mmap: false
+      node.attr.zone: asia-northeast1-a
+      cluster.routing.allocation.awareness.attributes: zone
+      cluster.routing.allocation.awareness.force.zone.values: asia-northeast1-a,asia-northeast1-b,asia-northeast1-c
+    podTemplate:
+      spec:
+        nodeSelector:
+          failure-domain.beta.kubernetes.io/zone: asia-northeast1-a
+    volumeClaimTemplates:
+    - metadata:
+        name: elasticsearch-data
+      spec:
+        accessModes:
+        - ReadWriteOnce
+        resources:
+          requests:
+            storage: 10Gi
+        storageClassName: ssd
+  - name: master-b
+    count: 1
+    config:
+      node.master: true
+      node.data: false
+      node.ingest: false
+      node.store.allow_mmap: false
+      node.attr.zone: asia-northeast1-b
+      cluster.routing.allocation.awareness.attributes: zone
+      cluster.routing.allocation.awareness.force.zone.values: asia-northeast1-a,asia-northeast1-b,asia-northeast1-c
+    podTemplate:
+      spec:
+        nodeSelector:
+          failure-domain.beta.kubernetes.io/zone: asia-northeast1-b
+    volumeClaimTemplates:
+    - metadata:
+        name: elasticsearch-data
+      spec:
+        accessModes:
+        - ReadWriteOnce
+        resources:
+          requests:
+            storage: 10Gi
+        storageClassName: ssd
+  - name: master-c
+    count: 1
+    config:
+      node.master: true
+      node.data: false
+      node.ingest: false
+      node.store.allow_mmap: false
+      node.attr.zone: asia-northeast1-c
+      cluster.routing.allocation.awareness.attributes: zone
+      cluster.routing.allocation.awareness.force.zone.values: asia-northeast1-a,asia-northeast1-b,asia-northeast1-c
+    podTemplate:
+      spec:
+        nodeSelector:
+          failure-domain.beta.kubernetes.io/zone: asia-northeast1-c
+    volumeClaimTemplates:
+    - metadata:
+        name: elasticsearch-data
+      spec:
+        accessModes:
+        - ReadWriteOnce
+        resources:
+          requests:
+            storage: 10Gi
+        storageClassName: ssd
+  - name: data-a
+    count: 2
+    config:
+      node.master: false
+      node.data: true
+      node.store.allow_mmap: false
+      node.attr.zone: asia-northeast1-a
+      cluster.routing.allocation.awareness.attributes: zone
+      cluster.routing.allocation.awareness.force.zone.values: asia-northeast1-a,asia-northeast1-b,asia-northeast1-c
+    podTemplate:
+      spec:
+        nodeSelector:
+          failure-domain.beta.kubernetes.io/zone: asia-northeast1-a
+    volumeClaimTemplates:
+    - metadata:
+        name: elasticsearch-data
+      spec:
+        accessModes:
+        - ReadWriteOnce
+        resources:
+          requests:
+            storage: 50Gi
+        storageClassName: ssd
+  - name: data-b
+    count: 2
+    config:
+      node.master: false
+      node.data: true
+      node.store.allow_mmap: false
+      node.attr.zone: asia-northeast1-b
+      cluster.routing.allocation.awareness.attributes: zone
+      cluster.routing.allocation.awareness.force.zone.values: asia-northeast1-a,asia-northeast1-b,asia-northeast1-c
+    podTemplate:
+      spec:
+        nodeSelector:
+          failure-domain.beta.kubernetes.io/zone: asia-northeast1-b
+    volumeClaimTemplates:
+    - metadata:
+        name: elasticsearch-data
+      spec:
+        accessModes:
+        - ReadWriteOnce
+        resources:
+          requests:
+            storage: 50Gi
+        storageClassName: ssd
+  - name: data-c
+    count: 2
+    config:
+      node.master: false
+      node.data: true
+      node.store.allow_mmap: false
+      node.attr.zone: asia-northeast1-c
+      cluster.routing.allocation.awareness.attributes: zone
+      cluster.routing.allocation.awareness.force.zone.values: asia-northeast1-a,asia-northeast1-b,asia-northeast1-c
+    podTemplate:
+      spec:
+        nodeSelector:
+          failure-domain.beta.kubernetes.io/zone: asia-northeast1-c
+    volumeClaimTemplates:
+    - metadata:
+        name: elasticsearch-data
+      spec:
+        accessModes:
+        - ReadWriteOnce
+        resources:
+          requests:
+            storage: 50Gi
+        storageClassName: ssd
